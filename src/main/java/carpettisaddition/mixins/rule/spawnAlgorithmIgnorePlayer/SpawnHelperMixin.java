@@ -21,16 +21,28 @@
 package carpettisaddition.mixins.rule.spawnAlgorithmIgnorePlayer;
 
 import carpettisaddition.CarpetTISAdditionSettings;
-import carpettisaddition.helpers.rule.spawnAlgorithmIgnorePlayer.GetValidPlayer;
+import carpettisaddition.helpers.rule.spawnAlgorithmIgnorePlayer.AlgorithmIgnorePlayer;
+import carpettisaddition.helpers.rule.spawnAlgorithmIgnorePlayer.IsSpaceEmptyHelper;
+import net.minecraft.entity.EntityCategory;
 import net.minecraft.entity.player.PlayerEntity;
-//#if MC < 11500
-//$$ import net.minecraft.world.World;
-//#endif
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.SpawnHelper;
+import net.minecraft.world.chunk.WorldChunk;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+//#if MC >= 11600
+//$$ import net.minecraft.world.gen.StructureAccessor;
+//$$ import net.minecraft.world.gen.chunk.ChunkGenerator;
+//$$ import net.minecraft.world.biome.SpawnSettings;
+//$$ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+//#elseif MC < 11500
+//$$ import net.minecraft.world.World;
+//#endif
+
 
 @Mixin(SpawnHelper.class)
 public abstract class SpawnHelperMixin {
@@ -64,13 +76,11 @@ public abstract class SpawnHelperMixin {
     ) {
         if (CarpetTISAdditionSettings.spawnAlgorithmIgnorePlayer) {
             //#if MC >= 11600
-            //$$ return GetValidPlayer.getClosestValidPlayer(world, x, y, z);
+            //$$ return AlgorithmIgnorePlayer.getClosestPlayer(world, x, y, z);
             //#elseif MC < 11500
-            //$$ return GetValidPlayer.getHorizontallyClosestValidPlayer((ServerWorld)world, x, z);
+            //$$ return AlgorithmIgnorePlayer.getHorizontallyClosestPlayer((ServerWorld)world, x, z);
             //#else
-            // Yes, MC <= 1.15 Minecraft finds horizontally closest player instead of closest player in a straight line while spawn a mob
-            // 是的，你没看错，1.15及以下版本，Minecraft在刷怪时，选择的是水平距离最近的玩家，而非直线距离最近的玩家
-            return GetValidPlayer.getHorizontallyClosestValidPlayer(world, x, z);
+            return AlgorithmIgnorePlayer.getHorizontallyClosestPlayer(world, x, z);
             //#endif
         }
         //#if MC >= 11600
@@ -78,5 +88,67 @@ public abstract class SpawnHelperMixin {
         //#else
         return world.getClosestPlayer(x, z, -1);
         //#endif
+    }
+
+
+
+    @Inject(
+            //#if MC >= 11600
+            //$$ method = "canSpawn(Lnet/minecraft/server/world/ServerWorld;Lnet/minecraft/entity/SpawnGroup;Lnet/minecraft/world/gen/StructureAccessor;Lnet/minecraft/world/gen/chunk/ChunkGenerator;Lnet/minecraft/world/biome/SpawnSettings$SpawnEntry;Lnet/minecraft/util/math/BlockPos$Mutable;D)Z",
+            //#elseif MC < 11500
+            //$$ method = "spawnEntitiesInChunk(Lnet/minecraft/entity/EntityCategory;Lnet/minecraft/world/World;Lnet/minecraft/world/chunk/WorldChunk;Lnet/minecraft/util/math/BlockPos;)V",
+            //#else
+            method = "spawnEntitiesInChunk(Lnet/minecraft/entity/EntityCategory;Lnet/minecraft/server/world/ServerWorld;Lnet/minecraft/world/chunk/WorldChunk;Lnet/minecraft/util/math/BlockPos;)V",
+            //#endif
+            at = @At(
+                    value = "INVOKE",
+                    //#if MC < 11500
+                    //$$ target = "Lnet/minecraft/world/World;doesNotCollide(Lnet/minecraft/util/math/Box;)Z"
+                    //#else
+                    target = "Lnet/minecraft/server/world/ServerWorld;doesNotCollide(Lnet/minecraft/util/math/Box;)Z"
+                    //#endif
+            )
+    )
+    private static void changeState(
+            //#if MC >= 11600
+            //$$ ServerWorld world, SpawnGroup group, StructureAccessor structureAccessor, ChunkGenerator chunkGenerator, SpawnSettings.SpawnEntry spawnEntry, BlockPos.Mutable pos, double squaredDistance, CallbackInfoReturnable<Boolean> cir
+            //#elseif MC < 11500
+            //$$ EntityCategory category, World world, WorldChunk chunk, BlockPos spawnPos, CallbackInfo ci
+            //#else
+            EntityCategory category, ServerWorld serverWorld, WorldChunk chunk, BlockPos spawnPos, CallbackInfo ci
+            //#endif
+    ) {
+        IsSpaceEmptyHelper.isCalledFromSpawnEntitiesInChunk.set(true);
+    }
+
+    @Inject(
+            //#if MC >= 11600
+            //$$ method = "canSpawn(Lnet/minecraft/server/world/ServerWorld;Lnet/minecraft/entity/SpawnGroup;Lnet/minecraft/world/gen/StructureAccessor;Lnet/minecraft/world/gen/chunk/ChunkGenerator;Lnet/minecraft/world/biome/SpawnSettings$SpawnEntry;Lnet/minecraft/util/math/BlockPos$Mutable;D)Z",
+            //#elseif MC < 11500
+            //$$ method = "spawnEntitiesInChunk(Lnet/minecraft/entity/EntityCategory;Lnet/minecraft/world/World;Lnet/minecraft/world/chunk/WorldChunk;Lnet/minecraft/util/math/BlockPos;)V",
+            //#else
+            method = "spawnEntitiesInChunk(Lnet/minecraft/entity/EntityCategory;Lnet/minecraft/server/world/ServerWorld;Lnet/minecraft/world/chunk/WorldChunk;Lnet/minecraft/util/math/BlockPos;)V",
+            //#endif
+            at = @At(
+                    value = "INVOKE",
+                    //#if MC < 11500
+                    //$$ target = "Lnet/minecraft/world/World;doesNotCollide(Lnet/minecraft/util/math/Box;)Z",
+                    //#else
+                    target = "Lnet/minecraft/server/world/ServerWorld;doesNotCollide(Lnet/minecraft/util/math/Box;)Z",
+                    //#endif
+                    shift = At.Shift.AFTER
+            )
+    )
+    private static void changeStateBack(
+            //#if MC >= 11600
+            //$$ ServerWorld world, SpawnGroup group, StructureAccessor structureAccessor, ChunkGenerator chunkGenerator, SpawnSettings.SpawnEntry spawnEntry, BlockPos.Mutable pos, double squaredDistance, CallbackInfoReturnable<Boolean> cir
+            //#elseif MC < 11500
+            //$$ EntityCategory category, World world, WorldChunk chunk, BlockPos spawnPos, CallbackInfo ci
+            //#else
+            EntityCategory category, ServerWorld serverWorld, WorldChunk chunk, BlockPos spawnPos, CallbackInfo ci
+            //#endif
+    ) {
+
+        IsSpaceEmptyHelper.isCalledFromSpawnEntitiesInChunk.set(false);
     }
 }

@@ -21,7 +21,7 @@
 package carpettisaddition.mixins.rule.spawnAlgorithmIgnorePlayer;
 
 import carpettisaddition.CarpetTISAdditionSettings;
-import carpettisaddition.helpers.rule.spawnAlgorithmIgnorePlayer.GetValidPlayer;
+import carpettisaddition.helpers.rule.spawnAlgorithmIgnorePlayer.AlgorithmIgnorePlayer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.gen.PhantomSpawner;
@@ -42,7 +42,7 @@ public abstract class PhantomSpawnerMixin {
     )
     private List<ServerPlayerEntity> getPlayers(ServerWorld world) {
         if (CarpetTISAdditionSettings.spawnAlgorithmIgnorePlayer) {
-            return GetValidPlayer.getValidPlayers(world);
+            return AlgorithmIgnorePlayer.getPlayers(world);
         }
         return world.getPlayers();
     }

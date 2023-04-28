@@ -20,6 +20,7 @@
 
 package carpettisaddition.helpers.rule.spawnAlgorithmIgnorePlayer;
 
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.predicate.entity.EntityPredicates;
@@ -30,9 +31,11 @@ import net.minecraft.world.World;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-public class GetValidPlayer {
-    public static boolean isValidPlayerInRange(World world, double x, double y, double z, double range) {
+public class AlgorithmIgnorePlayer {
+    public static boolean isPlayerInRange(World world, double x, double y, double z, double range) {
         for (PlayerEntity playerEntity : world.getPlayers()) {
             if (!EntityPredicates.EXCEPT_SPECTATOR.test(playerEntity) || !EntityPredicates.VALID_ENTITY_LIVING.test(playerEntity)) {
                 continue;
@@ -49,7 +52,7 @@ public class GetValidPlayer {
         return false;
     }
 
-    public static PlayerEntity getHorizontallyClosestValidPlayer(ServerWorld world, double x, double z) {
+    public static PlayerEntity getHorizontallyClosestPlayer(ServerWorld world, double x, double z) {
         PlayerEntity closestValidPlayer = null;
         double closestPlayerDistance = Double.MAX_VALUE;
         for (PlayerEntity player : world.getPlayers()) {
@@ -85,7 +88,7 @@ public class GetValidPlayer {
         return closestValidPlayer;
     }
 
-    public static PlayerEntity getClosestValidPlayer(ServerWorld world, double x, double y, double z) {
+    public static PlayerEntity getClosestPlayer(ServerWorld world, double x, double y, double z) {
         PlayerEntity closestValidPlayer = null;
         double closestPlayerDistance = Double.MAX_VALUE;
         for (PlayerEntity player : world.getPlayers()) {
@@ -109,32 +112,33 @@ public class GetValidPlayer {
         return closestValidPlayer;
     }
 
-    public static ServerPlayerEntity getRandomValidAlivePlayer(net.minecraft.server.world.ServerWorld serverWorld) {
+    public static ServerPlayerEntity getRandomAlivePlayer(net.minecraft.server.world.ServerWorld serverWorld) {
         List<ServerPlayerEntity> list = serverWorld.getPlayers(LivingEntity::isAlive);
-        list.removeIf(GetValidPlayer::shouldIgnore);
+        list.removeIf(AlgorithmIgnorePlayer::shouldIgnore);
         if (list.isEmpty()) {
             return null;
         }
         return list.get(serverWorld.random.nextInt(list.size()));
     }
 
-    public static List<ServerPlayerEntity> getValidPlayers(ServerWorld world) {
-        List<ServerPlayerEntity> r = new ArrayList<>();
-        for (ServerPlayerEntity player : world.getPlayers()) {
-            if (!shouldIgnore(player)) {
-                r.add(player);
-            }
-        }
-        return r;
+    public static List<ServerPlayerEntity> getPlayers(ServerWorld world) {
+        return new ArrayList<>(shouldIgnorePlayers(world));
     }
 
-    private static boolean shouldIgnore(PlayerEntity playerEntity) {
-        Team ignoreTeam = playerEntity.getServer().getScoreboard().getTeam("spawnAlgIgnore");
+    public static Set<ServerPlayerEntity> shouldIgnorePlayers(ServerWorld world) {
+        return world.getPlayers()
+                .stream()
+                .filter(AlgorithmIgnorePlayer::shouldIgnore)
+                .collect(Collectors.toSet());
+    }
+
+    public static boolean shouldIgnore(Entity player) {
+        Team ignoreTeam = player.getServer().getScoreboard().getTeam("spawnAlgIgnore");
 
         if (ignoreTeam != null) {
-            return playerEntity.isTeamPlayer(ignoreTeam);
+            return player.isTeamPlayer(ignoreTeam);
         } else {
-            playerEntity.getServer().getScoreboard().addTeam("spawnAlgIgnore");
+            player.getServer().getScoreboard().addTeam("spawnAlgIgnore");
         }
         return false;
     }

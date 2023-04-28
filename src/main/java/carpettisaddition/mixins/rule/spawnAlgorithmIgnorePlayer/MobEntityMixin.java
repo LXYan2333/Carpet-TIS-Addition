@@ -21,7 +21,7 @@
 package carpettisaddition.mixins.rule.spawnAlgorithmIgnorePlayer;
 
 import carpettisaddition.CarpetTISAdditionSettings;
-import carpettisaddition.helpers.rule.spawnAlgorithmIgnorePlayer.GetValidPlayer;
+import carpettisaddition.helpers.rule.spawnAlgorithmIgnorePlayer.AlgorithmIgnorePlayer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -42,7 +42,7 @@ public abstract class MobEntityMixin {
     )
     private PlayerEntity getClosestPlayer(World world, Entity entity, double distance) {
         if (CarpetTISAdditionSettings.spawnAlgorithmIgnorePlayer) {
-            return GetValidPlayer.getClosestValidPlayer(
+            return AlgorithmIgnorePlayer.getClosestPlayer(
                     (ServerWorld) world,
                     //#if MC<11500
                     //$$ entity.x, entity.y, entity.z

@@ -324,6 +324,7 @@
     "rule.sandDupingFix.FallingBlockEntityMixin",
     "rule.snowMeltMinLightLevel.SnowBlockMixin",
     "rule.spawnAlgorithmIgnorePlayer.CatSpawnerMixin",
+    "rule.spawnAlgorithmIgnorePlayer.EntityViewMixin",
     "rule.spawnAlgorithmIgnorePlayer.MobEntityMixin",
     "rule.spawnAlgorithmIgnorePlayer.MobSpawnerLogicMixin",
     "rule.spawnAlgorithmIgnorePlayer.PhantomSpawnerMixin",

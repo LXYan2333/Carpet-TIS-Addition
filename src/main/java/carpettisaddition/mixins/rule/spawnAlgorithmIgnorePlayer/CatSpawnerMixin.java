@@ -21,7 +21,7 @@
 package carpettisaddition.mixins.rule.spawnAlgorithmIgnorePlayer;
 
 import carpettisaddition.CarpetTISAdditionSettings;
-import carpettisaddition.helpers.rule.spawnAlgorithmIgnorePlayer.GetValidPlayer;
+import carpettisaddition.helpers.rule.spawnAlgorithmIgnorePlayer.AlgorithmIgnorePlayer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.world.gen.CatSpawner;
 import org.spongepowered.asm.mixin.Mixin;
@@ -39,7 +39,7 @@ public class CatSpawnerMixin {
     )
     private ServerPlayerEntity getRandomAlivePlayer(net.minecraft.server.world.ServerWorld serverWorld) {
         if (CarpetTISAdditionSettings.spawnAlgorithmIgnorePlayer) {
-            return GetValidPlayer.getRandomValidAlivePlayer(serverWorld);
+            return AlgorithmIgnorePlayer.getRandomAlivePlayer(serverWorld);
         }
         return serverWorld.getRandomAlivePlayer();
     }

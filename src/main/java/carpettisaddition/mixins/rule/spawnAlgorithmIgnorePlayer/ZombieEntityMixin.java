@@ -21,12 +21,16 @@
 package carpettisaddition.mixins.rule.spawnAlgorithmIgnorePlayer;
 
 import carpettisaddition.CarpetTISAdditionSettings;
-import carpettisaddition.helpers.rule.spawnAlgorithmIgnorePlayer.GetValidPlayer;
+import carpettisaddition.helpers.rule.spawnAlgorithmIgnorePlayer.AlgorithmIgnorePlayer;
+import carpettisaddition.helpers.rule.spawnAlgorithmIgnorePlayer.IsSpaceEmptyHelper;
+import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.mob.ZombieEntity;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(ZombieEntity.class)
 public class ZombieEntityMixin {
@@ -39,8 +43,31 @@ public class ZombieEntityMixin {
     )
     private boolean isPlayerInRange(World world, double x, double y, double z, double range) {
         if (CarpetTISAdditionSettings.spawnAlgorithmIgnorePlayer) {
-            return GetValidPlayer.isValidPlayerInRange(world, x, y, z, range);
+            return AlgorithmIgnorePlayer.isPlayerInRange(world, x, y, z, range);
         }
         return world.isPlayerInRange(x, y, z, range);
+    }
+
+    @Inject(
+            method = "damage(Lnet/minecraft/entity/damage/DamageSource;F)Z",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/world/World;doesNotCollide(Lnet/minecraft/entity/Entity;)Z"
+            )
+    )
+    private void changeState(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
+        IsSpaceEmptyHelper.isCalledFromSpawnEntitiesInChunk.set(true);
+    }
+
+    @Inject(
+            method = "damage(Lnet/minecraft/entity/damage/DamageSource;F)Z",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/world/World;doesNotCollide(Lnet/minecraft/entity/Entity;)Z",
+                    shift = At.Shift.AFTER
+            )
+    )
+    private void changeStateBack(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
+        IsSpaceEmptyHelper.isCalledFromSpawnEntitiesInChunk.set(false);
     }
 }
