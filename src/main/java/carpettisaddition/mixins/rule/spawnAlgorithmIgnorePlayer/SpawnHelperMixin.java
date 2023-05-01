@@ -44,7 +44,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 //#endif
 
 
-@Mixin(SpawnHelper.class)
+@Mixin(value = SpawnHelper.class)
 public abstract class SpawnHelperMixin {
     @Redirect(
             //#if MC < 11500
@@ -92,6 +92,7 @@ public abstract class SpawnHelperMixin {
 
 
 
+
     @Inject(
             //#if MC >= 11600
             //$$ method = "canSpawn(Lnet/minecraft/server/world/ServerWorld;Lnet/minecraft/entity/SpawnGroup;Lnet/minecraft/world/gen/StructureAccessor;Lnet/minecraft/world/gen/chunk/ChunkGenerator;Lnet/minecraft/world/biome/SpawnSettings$SpawnEntry;Lnet/minecraft/util/math/BlockPos$Mutable;D)Z",
@@ -121,6 +122,22 @@ public abstract class SpawnHelperMixin {
         IsSpaceEmptyHelper.isCalledFromSpawnEntitiesInChunk.set(true);
     }
 
+//    /**
+//     * @author LXYan
+//     * @reason Copy from IWorldMixin
+//     */
+//    @Overwrite
+//    public static void spawnEntitiesInChunk(EntityCategory category, ServerWorld serverWorld, WorldChunk chunk, BlockPos spawnPos){
+//        try {
+//            if (CarpetTISAdditionSettings.spawnAlgorithmIgnorePlayer){
+//                IsSpaceEmptyHelper.isCalledFromSpawnEntitiesInChunk.set(true);
+//            }
+//            SpawnHelper.spawnEntitiesInChunk(category, serverWorld, chunk, spawnPos);
+//        }finally {
+//            IsSpaceEmptyHelper.isCalledFromSpawnEntitiesInChunk.set(false);
+//        }
+//    }
+
     @Inject(
             //#if MC >= 11600
             //$$ method = "canSpawn(Lnet/minecraft/server/world/ServerWorld;Lnet/minecraft/entity/SpawnGroup;Lnet/minecraft/world/gen/StructureAccessor;Lnet/minecraft/world/gen/chunk/ChunkGenerator;Lnet/minecraft/world/biome/SpawnSettings$SpawnEntry;Lnet/minecraft/util/math/BlockPos$Mutable;D)Z",
@@ -130,13 +147,7 @@ public abstract class SpawnHelperMixin {
             method = "spawnEntitiesInChunk(Lnet/minecraft/entity/EntityCategory;Lnet/minecraft/server/world/ServerWorld;Lnet/minecraft/world/chunk/WorldChunk;Lnet/minecraft/util/math/BlockPos;)V",
             //#endif
             at = @At(
-                    value = "INVOKE",
-                    //#if MC < 11500
-                    //$$ target = "Lnet/minecraft/world/World;doesNotCollide(Lnet/minecraft/util/math/Box;)Z",
-                    //#else
-                    target = "Lnet/minecraft/server/world/ServerWorld;doesNotCollide(Lnet/minecraft/util/math/Box;)Z",
-                    //#endif
-                    shift = At.Shift.AFTER
+                    value = "RETURN"
             )
     )
     private static void changeStateBack(
@@ -151,4 +162,36 @@ public abstract class SpawnHelperMixin {
 
         IsSpaceEmptyHelper.isCalledFromSpawnEntitiesInChunk.set(false);
     }
+
+//    @Redirect(
+//            method = "spawnEntitiesInChunk(Lnet/minecraft/entity/EntityCategory;Lnet/minecraft/server/world/ServerWorld;Lnet/minecraft/world/chunk/WorldChunk;Lnet/minecraft/util/math/BlockPos;)V",
+//            at = @At(
+//                    value = "INVOKE",
+//                    target = "Lnet/minecraft/entity/mob/MobEntity;canImmediatelyDespawn(D)Z"
+//            )
+//    )
+//    private static boolean beforeCreateEntity(MobEntity mobEntity, double distanceSquared) {
+//        System.out.println("##################  new try   ################");
+//        System.out.println("isLagFreeSpawning: " + CarpetSettings.lagFreeSpawning);
+//        System.out.println("tack_spawn         "+SpawnReporter.track_spawns);
+//        System.out.println("local_spawn        "+SpawnReporter.local_spawns != null);
+//        System.out.println("mock_spawn         "+SpawnReporter.mock_spawns);
+//        System.out.println("d=                 "+distanceSquared);
+//        System.out.println("mobEntity.canImmediatelyDespawn     "+mobEntity.canImmediatelyDespawn(distanceSquared));
+////        System.out.println("Try to create a Mob!");
+//        return true;
+//    }
+//
+//    @Redirect(
+//            method ="spawnEntitiesInChunk(Lnet/minecraft/entity/EntityCategory;Lnet/minecraft/server/world/ServerWorld;Lnet/minecraft/world/chunk/WorldChunk;Lnet/minecraft/util/math/BlockPos;)V",
+//            at = @At(
+//                    value = "INVOKE",
+//                    target = "Lnet/minecraft/entity/mob/MobEntity;canSpawn(Lnet/minecraft/world/IWorld;Lnet/minecraft/entity/SpawnType;)Z"
+//            )
+//    )
+//    private static boolean before2(MobEntity mobEntity, IWorld serverWorld, SpawnType spawnType){
+//        System.out.println("!mobEntity.canSpawn                 "+!mobEntity.canSpawn(serverWorld, SpawnType.NATURAL));
+//        System.out.println("!mobEntity.canSpawn                 "+!mobEntity.canSpawn(serverWorld));
+//        return  true;
+//    }
 }

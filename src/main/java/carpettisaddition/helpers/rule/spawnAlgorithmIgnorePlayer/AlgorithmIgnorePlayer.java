@@ -29,10 +29,9 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.World;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class AlgorithmIgnorePlayer {
     public static boolean isPlayerInRange(World world, double x, double y, double z, double range) {
@@ -121,15 +120,10 @@ public class AlgorithmIgnorePlayer {
         return list.get(serverWorld.random.nextInt(list.size()));
     }
 
-    public static List<ServerPlayerEntity> getPlayers(ServerWorld world) {
-        return new ArrayList<>(shouldIgnorePlayers(world));
-    }
-
-    public static Set<ServerPlayerEntity> shouldIgnorePlayers(ServerWorld world) {
+    public static Stream<ServerPlayerEntity> shouldIgnorePlayers(ServerWorld world) {
         return world.getPlayers()
                 .stream()
-                .filter(AlgorithmIgnorePlayer::shouldIgnore)
-                .collect(Collectors.toSet());
+                .filter(AlgorithmIgnorePlayer::shouldIgnore);
     }
 
     public static boolean shouldIgnore(Entity player) {
@@ -141,5 +135,16 @@ public class AlgorithmIgnorePlayer {
             player.getServer().getScoreboard().addTeam("spawnAlgIgnore");
         }
         return false;
+    }
+
+    public static boolean shouldNotIgnore(Entity player) {
+        if (IsSpaceEmptyHelper.isCalledFromSpawnEntitiesInChunk.get() &&shouldIgnore(player)){
+            System.out.println("Ignore: " + player);
+        }
+        return !shouldIgnore(player);
+    }
+
+    public static boolean ignoreList(Set<Entity> set, List<Entity> list) {
+        return list.addAll(set);
     }
 }

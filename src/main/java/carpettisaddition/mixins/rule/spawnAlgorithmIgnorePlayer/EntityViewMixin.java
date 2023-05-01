@@ -21,18 +21,23 @@
 package carpettisaddition.mixins.rule.spawnAlgorithmIgnorePlayer;
 
 
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.world.EntityView;
-import org.spongepowered.asm.mixin.Mixin;
+import carpettisaddition.CarpetTISAdditionSettings;
 import carpettisaddition.helpers.rule.spawnAlgorithmIgnorePlayer.AlgorithmIgnorePlayer;
 import carpettisaddition.helpers.rule.spawnAlgorithmIgnorePlayer.IsSpaceEmptyHelper;
-import carpettisaddition.CarpetTISAdditionSettings;
 import net.minecraft.entity.Entity;
+import net.minecraft.world.EntityView;
+import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.Redirect;
+
+import java.util.List;
+import java.util.stream.Stream;
 
 //#if MC >= 11600
-//$$ import java.util.function.Predicate;
+//$$ import org.spongepowered.asm.mixin.Shadow;
+//$$ import net.minecraft.util.math.Box;
+//$$import java.util.function.Predicate;
+//$$ import net.minecraft.predicate.entity.EntityPredicates;
 //#else
 import java.util.Set;
 //#endif
@@ -40,38 +45,76 @@ import java.util.Set;
 
 @Mixin(EntityView.class)
 public interface EntityViewMixin {
-    @ModifyVariable(
+
+    @Redirect(
             //#if MC >= 11800
-            //$$    method = "getEntityCollisions(Lnet/minecraft/entity/Entity;Lnet/minecraft/util/math/Box;)Ljava/util/List;",
+            //$$ method = "getEntityCollisions(Lnet/minecraft/entity/Entity;Lnet/minecraft/util/math/Box;)Ljava/util/List;",
             //#elseif MC >= 11600
-            //$$    method = "getEntityCollisions(Lnet/minecraft/entity/Entity;Lnet/minecraft/util/math/Box;Ljava/util/function/Predicate;)Ljava/util/stream/Stream;",
+            //$$ method = "getEntityCollisions(Lnet/minecraft/entity/Entity;Lnet/minecraft/util/math/Box;Ljava/util/function/Predicate;)Ljava/util/stream/Stream;",
             //#elseif MC < 11500
-            //$$    method = "Lnet/minecraft/world/EntityView;method_20743(Lnet/minecraft/entity/Entity;Lnet/minecraft/util/math/Box;Ljava/util/Set;)Ljava/util/stream/Stream;",
+            //$$ method = "Lnet/minecraft/world/EntityView;method_20743(Lnet/minecraft/entity/Entity;Lnet/minecraft/util/math/Box;Ljava/util/Set;)Ljava/util/stream/Stream;",
             //#else
             method = "getEntityCollisions(Lnet/minecraft/entity/Entity;Lnet/minecraft/util/math/Box;Ljava/util/Set;)Ljava/util/stream/Stream;",
             //#endif
             at = @At(
                     value = "INVOKE",
-                    //#if MC >= 11600
+                    //#if MC >= 11800
                     //$$ target = "Lnet/minecraft/world/EntityView;getOtherEntities(Lnet/minecraft/entity/Entity;Lnet/minecraft/util/math/Box;Ljava/util/function/Predicate;)Ljava/util/List;"
                     //#else
-                    target = "Lnet/minecraft/world/EntityView;getEntities(Lnet/minecraft/entity/Entity;Lnet/minecraft/util/math/Box;)Ljava/util/List;"
+                    target = "Ljava/util/List;stream()Ljava/util/stream/Stream;"
                     //#endif
+
             )
     )
-    //#if MC >= 11600
-    //$$ default Predicate<Entity> predicateIgnorePlayer(Predicate<Entity> predicate) {
+    //#if MC >= 11800
+    //$$ default List listIgnorePlayer(EntityView instance, Entity entity, Box box, Predicate<Entity> predicate) {
     //$$     if (IsSpaceEmptyHelper.isCalledFromSpawnEntitiesInChunk.get() && CarpetTISAdditionSettings.spawnAlgorithmIgnorePlayer) {
-    //$$         return predicate.or(AlgorithmIgnorePlayer::shouldIgnore);
+    //$$         return instance.getOtherEntities(entity,box, predicate.and(AlgorithmIgnorePlayer::shouldNotIgnore));
     //$$     }
-    //$$     return predicate;
+    //$$     return instance.getOtherEntities(entity,box,predicate);
+    //$$ }
+    //#endif
+    default Stream<Entity> streamIgnorePlayer(List<Entity> list) {
+        if (IsSpaceEmptyHelper.isCalledFromSpawnEntitiesInChunk.get() && CarpetTISAdditionSettings.spawnAlgorithmIgnorePlayer) {
+            return list.stream().filter(AlgorithmIgnorePlayer::shouldNotIgnore);
+        }
+        return list.stream();
+    }
+
+
+    //#if MC >= 11600
+    //$$ @Shadow
+    //$$ List<Entity> getOtherEntities(Entity par1, Box par2);
+    //$$
+    //$$ @Shadow
+    //$$ List<Entity> getOtherEntities(Entity par1, Box par2, Predicate<? super Entity> par3);
+    //$$ @Redirect(
+    //$$         method = "intersectsEntities(Lnet/minecraft/entity/Entity;Lnet/minecraft/util/shape/VoxelShape;)Z",
+    //$$         at = @At(
+    //$$                 value = "INVOKE",
+    //$$                 target = "Lnet/minecraft/world/EntityView;getOtherEntities(Lnet/minecraft/entity/Entity;Lnet/minecraft/util/math/Box;)Ljava/util/List;"
+    //$$         )
+    //$$ )
+    //$$ default List streamIgnorePlayer1(EntityView instance, Entity entity, Box box) {
+    //$$     if (IsSpaceEmptyHelper.isCalledFromSpawnEntitiesInChunk.get() && CarpetTISAdditionSettings.spawnAlgorithmIgnorePlayer) {
+    //$$         return this.getOtherEntities(entity,box, EntityPredicates.EXCEPT_SPECTATOR.and(AlgorithmIgnorePlayer::shouldNotIgnore));
+    //$$     }
+    //$$
+    //$$     return getOtherEntities(entity, box);
     //$$ }
     //#else
-    default Set<Entity> predicateIgnorePlayer(Set<Entity> entities) {
+    @Redirect(
+            method = "intersectsEntities(Lnet/minecraft/entity/Entity;Lnet/minecraft/util/shape/VoxelShape;)Z",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Ljava/util/List;stream()Ljava/util/stream/Stream;"
+            )
+    )
+    default Stream<Entity> streamIgnorePlayer1(List<Entity> list) {
         if (IsSpaceEmptyHelper.isCalledFromSpawnEntitiesInChunk.get() && CarpetTISAdditionSettings.spawnAlgorithmIgnorePlayer) {
-            entities.addAll(AlgorithmIgnorePlayer.shouldIgnorePlayers((ServerWorld) this));
+            return list.stream().filter(AlgorithmIgnorePlayer::shouldNotIgnore);
         }
-        return entities;
+        return list.stream();
     }
     //#endif
 }

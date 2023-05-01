@@ -73,13 +73,7 @@ public class MobSpawnerLogicMixin {
             method = "update()V",
             //#endif
             at = @At(
-                    value = "INVOKE",
-                    //#if MC >= 11700
-                    //$$  target = "Lnet/minecraft/server/world/ServerWorld;isSpaceEmpty(Lnet/minecraft/util/math/Box;)Z",
-                    //#else
-                    target = "Lnet/minecraft/world/World;doesNotCollide(Lnet/minecraft/util/math/Box;)Z",
-                    //#endif
-                    shift = At.Shift.AFTER
+                    value = "RETURN"
             )
     )
     private void changeStateBack(CallbackInfo ci) {

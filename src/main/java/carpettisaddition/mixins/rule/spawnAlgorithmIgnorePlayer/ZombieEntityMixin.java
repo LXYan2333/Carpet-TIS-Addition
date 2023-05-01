@@ -62,9 +62,8 @@ public class ZombieEntityMixin {
     @Inject(
             method = "damage(Lnet/minecraft/entity/damage/DamageSource;F)Z",
             at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/world/World;doesNotCollide(Lnet/minecraft/entity/Entity;)Z",
-                    shift = At.Shift.AFTER
+                    value = "RETURN",
+                    target = "Lnet/minecraft/world/World;doesNotCollide(Lnet/minecraft/entity/Entity;)Z"
             )
     )
     private void changeStateBack(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {

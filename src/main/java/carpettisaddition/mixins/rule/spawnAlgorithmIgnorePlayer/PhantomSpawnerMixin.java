@@ -30,6 +30,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Mixin(PhantomSpawner.class)
 public abstract class PhantomSpawnerMixin {
@@ -42,7 +43,7 @@ public abstract class PhantomSpawnerMixin {
     )
     private List<ServerPlayerEntity> getPlayers(ServerWorld world) {
         if (CarpetTISAdditionSettings.spawnAlgorithmIgnorePlayer) {
-            return AlgorithmIgnorePlayer.getPlayers(world);
+            return AlgorithmIgnorePlayer.shouldIgnorePlayers(world).collect(Collectors.toList());
         }
         return world.getPlayers();
     }
